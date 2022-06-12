@@ -27,6 +27,11 @@
           <q-btn color="secondary" size="lg" stretch class="full-width" label="注册新用户" @click="registerUser.show()"/>
         </q-btn-dropdown>
       </q-card-section>
+      <q-inner-loading
+        :showing="loading"
+        label="正在登录"
+        label-class="text-primary text-h5"
+      />
     </q-card>
   </div>
 </template>
@@ -46,13 +51,15 @@ export default defineComponent({
     const username = ref('')
     const password = ref('')
     const api = inject('api')
+    const loading = ref(false)
 
     return {
-      router,
       showLogin,
       username,
       password,
+      loading,
       login () {
+        loading.value = true
         api.value = axios.create({
           baseURL: 'http://localhost:8080',
           auth: {
@@ -61,12 +68,12 @@ export default defineComponent({
           }
         })
         api.value.get('user/login').then(rs => {
-          console.log(rs.data)
+          sessionStorage.setItem('role', rs.data)
+          loading.value = false
+          router.push('main')
         }).catch(e => {
-          $q.notify({
-            type: 'negative',
-            message: '用户名或密码无效'
-          })
+          loading.value = false
+          $q.notify({ type: 'negative', message: '用户名或密码无效' })
         })
       },
       registerUser: ref()

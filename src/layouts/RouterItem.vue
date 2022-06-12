@@ -3,7 +3,7 @@
     clickable
     tag="a"
     target="_blank"
-    :href="link"
+    @click="handleClick(link)"
   >
     <q-item-section
       v-if="icon"
@@ -14,20 +14,21 @@
 
     <q-item-section>
       <q-item-label>{{ title }}</q-item-label>
-      <q-item-label caption>{{ caption }}</q-item-label>
+      <q-item-label caption>
+        {{ caption }}
+      </q-item-label>
     </q-item-section>
   </q-item>
 </template>
 
 <script>
-import { defineComponent } from 'vue'
+import { useRouter } from 'vue-router'
 
-export default defineComponent({
-  name: 'EssentialLink',
+export default {
+  name: 'RouterItem',
   props: {
     title: {
-      type: String,
-      required: true
+      type: String
     },
 
     caption: {
@@ -44,6 +45,15 @@ export default defineComponent({
       type: String,
       default: ''
     }
+  },
+  setup (props, context) {
+    const router = useRouter()
+    return {
+      handleClick (target) {
+        context.emit('close-drawer')
+        router.push(target)
+      }
+    }
   }
-})
+}
 </script>

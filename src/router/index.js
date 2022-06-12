@@ -26,5 +26,22 @@ export default route(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE)
   })
 
+  // 路由守护
+  Router.beforeEach((to, from, next) => {
+    if (to.matched.some(record => record.meta.requireAuth)) {
+      const role = sessionStorage.getItem('role')
+      if (role !== null) { // 判断当前的role是否存在 ； 登录存入的role
+        next()
+      } else {
+        // 没有登录返回到登录页面
+        next({
+          path: '/'
+        })
+      }
+    } else {
+      next()
+    }
+  })
+
   return Router
 })
