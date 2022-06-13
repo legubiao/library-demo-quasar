@@ -1,7 +1,7 @@
 <template>
   <q-dialog v-model="visible">
-    <q-card style="min-width: 22rem" class="q-pa-sm">
-      <q-card-section class="q-pa-sm">
+    <q-card style="min-width: 22rem; max-width: 80vw" class="q-pa-sm">
+      <q-card-section class="q-pa-sm row items-center">
         <q-file outlined v-model="excel" label="上传图书Excel表">
           <template v-slot:before>
             <div class="text-h6">图书上传</div>
@@ -12,6 +12,15 @@
             <q-icon name="create_new_folder" @click.stop />
           </template>
         </q-file>
+        <template v-if="books.length !== 0  && $q.screen.gt.xs">
+          <q-space/>
+          <transition-flip class="text-subtitle1">
+            <q-btn v-if="selected.length !== 0" color="primary" outline @click="loadSelected">
+              录入选中的{{selected.length}}本书
+            </q-btn>
+            <q-btn v-else color="primary" @click="loadAll" label="全部录入"/>
+          </transition-flip>
+        </template>
       </q-card-section>
       <q-slide-transition >
         <div v-show="books.length !== 0">
@@ -19,7 +28,7 @@
           <q-card-section class="q-pa-sm">
             <q-table
               :rows="books"
-              :columns="bookColumns"
+              :columns="columns"
               :pagination="{rowsPerPage: 7}"
               selection="multiple"
               v-model:selected="selected"
@@ -29,7 +38,7 @@
               <q-spinner-gears size="50px" color="primary" />
             </q-inner-loading>
           </q-card-section>
-          <q-card-section class="row q-pa-sm justify-end q-gutter-x-md">
+          <q-card-section v-if="$q.screen.lt.sm" class="row q-pa-sm justify-end q-gutter-x-md text-subtitle1">
             <transition-flip>
               <q-btn v-show="selected.length !== 0" color="primary" outline @click="loadSelected">
                 录入选中的{{selected.length}}本书
@@ -46,20 +55,22 @@
 <script>
 
 import TransitionFlip from 'components/universal/Flip.vue'
-import { ref, watch, inject } from 'vue'
+import { ref, watch } from 'vue'
 import * as XLSX from 'xlsx'
 
-const bookColumns = [
-  { name: 'bookID', label: '条码号', align: 'left', field: 'bookID' },
+const columns = [
+  { name: 'id', label: '条码号', align: 'left', field: 'id' },
+  { name: 'title', label: '标题', align: 'left', field: 'title', sortable: true },
+  { name: 'author', label: '作者', align: 'left', field: 'author', sortable: true },
+  { name: 'publisher', label: '出版社', align: 'left', field: 'publisher', sortable: true },
   { name: 'callNumber', label: '索书号', align: 'left', field: 'callNumber', sortable: true },
-  { name: 'title', label: '题名', align: 'left', field: 'title', sortable: true }
+  { name: 'isbn', label: 'ISBN', align: 'left', field: 'isbn', sortable: true }
 ]
 
 export default {
   name: 'BookUploader',
   components: { TransitionFlip },
   setup (prop, context) {
-    const api = inject('api').value
     const visible = ref(false)
     const loading = ref(false)
     const books = ref([])
@@ -74,35 +85,13 @@ export default {
           const workbook = XLSX.read(data, { type: 'binary' })
           const table = workbook.Sheets[workbook.SheetNames[0]]
           XLSX.utils.sheet_to_json(table).forEach(data => {
-            getBook(data.bookID)
+            books.value.push(data)
           })
           loading.value = false
         }
         reader.readAsBinaryString(value)
       }
     })
-
-    function getBook (val) {
-      api.get('book/id/' + val).then((rs) => {
-        if (rs.data !== '') {
-          books.value.push(rs.data)
-        }
-      })
-    }
-
-    function loadSelected () {
-      context.emits('load', selected.value)
-      visible.value = false
-      books.value = []
-      selected.value = []
-    }
-
-    function loadAll () {
-      context.emits('load', books.value)
-      visible.value = false
-      books.value = []
-      selected.value = []
-    }
 
     function clear () {
       excel.value = null
@@ -116,15 +105,25 @@ export default {
     }
 
     return {
-      bookColumns,
+      columns,
       visible,
       loading,
       books,
       selected,
       excel,
       clear,
-      loadAll,
-      loadSelected,
+      loadAll () {
+        context.emit('load', books.value)
+        visible.value = false
+        books.value = []
+        selected.value = []
+      },
+      loadSelected () {
+        context.emit('load', selected.value)
+        visible.value = false
+        books.value = []
+        selected.value = []
+      },
       show
     }
   }

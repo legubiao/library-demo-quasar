@@ -5,7 +5,8 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', name: '图书检索', component: () => import('pages/BookSearch.vue') },
-      { path: '/BookManage', name: '图书管理', component: () => import('pages/BookManage.vue') }
+      { path: '/BookManage', name: '图书管理', component: () => import('pages/BookManage.vue') },
+      { path: '/Log', name: '系统日志', component: () => import('pages/Log.vue') }
     ]
   },
 

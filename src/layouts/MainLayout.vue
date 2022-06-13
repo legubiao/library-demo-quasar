@@ -38,22 +38,13 @@
                 @click="$q.fullscreen.toggle()"
                 :icon="$q.fullscreen.isActive ? 'fullscreen_exit' : 'fullscreen'"
               />
-              <q-btn flat round color="grey" icon="settings" @click="router.push('Setting'); leftDrawerOpen = false"/>
               <q-btn flat round color="grey" icon="autorenew" @click="router.go(0)"/>
             </div>
           </q-item-section>
         </q-item>
         <q-separator/>
         <q-scroll-area style="height: calc(100vh - 6.1rem)">
-          <div>
-            <q-item-label header>基础功能</q-item-label>
-            <router-item
-              v-for="link in basicFunction"
-              :key="link.title"
-              v-bind="link"
-              @close-drawer="leftDrawerOpen = false"
-            />
-            <q-separator/>
+          <template v-if="role === 'admin'">
             <q-item-label header>进阶功能</q-item-label>
             <router-item
               v-for="link in advancedFunction"
@@ -61,7 +52,7 @@
               v-bind="link"
               @close-drawer="leftDrawerOpen = false"
             />
-          </div>
+          </template>
           <q-separator/>
           <q-item-label header>主页与登录</q-item-label>
           <router-item
@@ -85,7 +76,7 @@
 </template>
 
 <script>
-import { defineComponent, ref } from 'vue'
+import { defineComponent, onBeforeMount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import TransitionFade from 'components/universal/Fade.vue'
@@ -102,9 +93,16 @@ export default defineComponent({
 
   setup () {
     const leftDrawerOpen = ref(false)
+    const router = useRouter()
+    const role = sessionStorage.getItem('role')
+
+    onBeforeMount(() => {
+      if (role === null) router.push('/')
+    })
 
     return {
-      router: useRouter(),
+      role,
+      router,
       advancedFunction: routerLinks('advanced'),
       basicFunction: routerLinks('basic'),
       loginLinks: routerLinks('login'),

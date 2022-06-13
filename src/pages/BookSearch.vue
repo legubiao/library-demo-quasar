@@ -1,45 +1,48 @@
 <template>
   <div class="items-center content-center justify-center flex q-gutter-md">
-    <q-card>
-      <q-card-section class="q-pa-none">
-        <q-input outlined v-model="keyword" :placeholder="placeholder">
-          <template v-slot:append>
-            <q-icon v-if="keyword !== ''" name="close" @click="clear" class="cursor-pointer" />
-            <q-btn-dropdown color="primary" :disable="keyword === ''" icon="search" :label="searchMode" split @click="search">
-              <q-list>
-                <q-item clickable v-close-popup @click="switchMode('索书号搜索')">
-                  <q-item-section>
-                    <q-item-label>索书号搜索</q-item-label>
-                  </q-item-section>
-                </q-item>
-                <q-item clickable v-close-popup @click="switchMode('条码号搜索')">
-                  <q-item-section>
-                    <q-item-label>条码号搜索</q-item-label>
-                  </q-item-section>
-                </q-item>
-                <q-separator spaced="true"/>
-                <q-item-label header>标题搜索</q-item-label>
-                <q-item clickable v-close-popup @click="switchMode('精确搜索')">
-                  <q-item-section>
-                    <q-item-label>精确搜素</q-item-label>
-                  </q-item-section>
-                </q-item>
-                <q-item clickable v-close-popup @click="switchMode('首字搜索')">
-                  <q-item-section>
-                    <q-item-label>首字搜索</q-item-label>
-                  </q-item-section>
-                </q-item>
-                <q-item clickable v-close-popup @click="switchMode('模糊搜索')">
-                  <q-item-section>
-                    <q-item-label>模糊搜索</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-btn-dropdown>
-          </template>
-        </q-input>
-      </q-card-section>
-    </q-card>
+    <div v-show="books.length === 0" class="text-h4">图书检索引擎</div>
+    <div class="full-width justify-center row">
+      <q-card>
+        <q-card-section class="q-pa-none">
+          <q-input outlined v-model="keyword" :placeholder="placeholder">
+            <template v-slot:append>
+              <q-icon v-if="keyword !== ''" name="close" @click="clear" class="cursor-pointer" />
+              <q-btn-dropdown color="primary" :disable="keyword === ''" icon="search" :label="searchMode" split @click="search">
+                <q-list>
+                  <q-item clickable v-close-popup @click="switchMode('索书号搜索')">
+                    <q-item-section>
+                      <q-item-label>索书号搜索</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-item clickable v-close-popup @click="switchMode('条码号搜索')">
+                    <q-item-section>
+                      <q-item-label>条码号搜索</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-separator spaced="true"/>
+                  <q-item-label header>标题搜索</q-item-label>
+                  <q-item clickable v-close-popup @click="switchMode('精确搜索')">
+                    <q-item-section>
+                      <q-item-label>精确搜素</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-item clickable v-close-popup @click="switchMode('首字搜索')">
+                    <q-item-section>
+                      <q-item-label>首字搜索</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-item clickable v-close-popup @click="switchMode('模糊搜索')">
+                    <q-item-section>
+                      <q-item-label>模糊搜索</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-btn-dropdown>
+            </template>
+          </q-input>
+        </q-card-section>
+      </q-card>
+    </div>
     <q-slide-transition>
       <div v-show="books.length !== 0">
         <q-table
@@ -51,11 +54,10 @@
           :style="$q.screen.lt.sm?'height: calc(100vh - 13.3rem)':'height: calc(100vh - 9.5rem)'"
         >
           <template v-slot:body="props">
-            <q-tr :props="props" @click="bookInfo.show(props.row)">
-              <q-td key="title" :props="props" class="text-bold">{{ props.row.title }}</q-td>
-              <q-td key="callNumber" :props="props">{{ props.row.callNumber }}</q-td>
-              <q-td key="bookID" :props="props">{{ props.row.bookID }}</q-td>
-              <q-td key="shelfDescribe" :props="props">{{ props.row.shelfDescribe }}</q-td>
+            <q-tr :props="props" @click="bookDialog.show(props.row)">
+              <q-td v-for="column in bookColumns" v-bind:key="column.name" :props="props">
+                {{ props.row[column.name] }}
+              </q-td>
             </q-tr>
           </template>
         </q-table>
@@ -64,22 +66,27 @@
         </q-inner-loading>
       </div>
     </q-slide-transition>
+    <book-dialog ref="bookDialog" @refresh="search"/>
   </div>
 </template>
 
 <script>
 import { inject, ref } from 'vue'
 import { useQuasar } from 'quasar'
+import BookDialog from 'components/book/BookDialog.vue'
 
 const bookColumns = [
-  { name: 'title', label: '题名', align: 'left', field: 'title', sortable: true },
+  { name: 'id', label: '条码号', align: 'left', field: 'id' },
+  { name: 'title', label: '标题', align: 'left', field: 'title', sortable: true },
+  { name: 'author', label: '作者', align: 'left', field: 'author', sortable: true },
+  { name: 'publisher', label: '出版社', align: 'left', field: 'publisher', sortable: true },
   { name: 'callNumber', label: '索书号', align: 'left', field: 'callNumber', sortable: true },
-  { name: 'bookID', label: '条码号', align: 'left', field: 'bookID' },
-  { name: 'shelfDescribe', label: '当前架', align: 'left', field: 'shelfDescribe' }
+  { name: 'isbn', label: 'ISBN', align: 'left', field: 'isbn', sortable: true }
 ]
 
 export default {
   name: 'BookSearch',
+  components: { BookDialog },
   setup () {
     const $q = useQuasar()
     const api = inject('api').value
@@ -166,19 +173,18 @@ export default {
     }
 
     function searchByID () {
-      api.get('book/id/' + keyword.value)
-        .then((response) => {
-          if (response.data !== '') {
-            books.value.push(response.data)
-          }
-        }).finally(() => {
-          loading.value = false
-        })
+      api.get('book/id/' + keyword.value).then(rs => {
+        if (rs.data !== '') {
+          books.value.push(rs.data)
+        }
+      }).finally(() => {
+        loading.value = false
+      })
     }
 
     return {
       bookColumns,
-      bookInfo: ref(),
+      bookDialog: ref(),
       visible,
       loading,
       books,

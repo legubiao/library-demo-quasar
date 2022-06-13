@@ -14,6 +14,7 @@ export default defineComponent({
   name: 'App',
   components: { TransitionBounce },
   setup () {
+    sessionStorage.removeItem('role')
     provide('api', ref())
   }
 })
